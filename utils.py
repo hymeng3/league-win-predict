@@ -14,3 +14,6 @@ def get_inputs():
 		df['blueFirstBlood'] = df['blueFirstBlood'].astype(int)
 		
 	return df1, df2, df3, df4, df5
+
+def get_batch(data, labels, batch_size):
+    return tf.data.Dataset.from_tensor_slices((data,labels)).batch(batch_size)
