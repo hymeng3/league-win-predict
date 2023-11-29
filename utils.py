@@ -17,6 +17,7 @@ def get_inputs():
 	for df in game_states:
 		df.drop(columns=['Unnamed: 0', 'matchID', 'redFirstBlood', 'redWin', 'fullTimeMS', 'timePercent'], inplace=True)
 		df['blueFirstBlood'] = df['blueFirstBlood'].astype(int)
+		df['blueWin'] = df['blueWin'].astype(int)
 		
 	return df1, df2, df3, df4, df5
 
