@@ -44,5 +44,56 @@ def binary_comparison_plot( dataset, target):
 
 	plt.show()
 
+
+def feature_transform(dataset):
+	### Place tested feature transforms here for easier processing
+	
+	# Has dragon soul if number of non elder dragon kills = 4
+	blueNonElderDragonKills = dataset.blueDragonKill - dataset.blueDragonElderKill
+	redNonElderDragonKills = dataset.redDragonKill - dataset.redDragonElderKill
+	
+	dataset.insert(len(dataset.columns), 'blueHasDragonSoul', blueNonElderDragonKills.map(lambda x: 1 if x == 4 else 0))
+	dataset.insert(len(dataset.columns), 'redHasDragonSoul', redNonElderDragonKills.map(lambda x: 1 if x == 4 else 0))
+
+	# Change minion kills per side to percent difference compared to total kills
+	min_minions = 1 # Add min minions to totals to avoid divide by 0
+	minionKillDiff = dataset.blueMinionsKilled - dataset.redMinionsKilled
+	totalMinionKills = dataset.blueMinionsKilled + dataset.redMinionsKilled + min_minions
+	jungleMinionKillDiff = dataset.blueJungleMinionsKilled - dataset.redJungleMinionsKilled
+	totalJungleMinionKills = dataset.blueJungleMinionsKilled + dataset.redJungleMinionsKilled + min_minions
+
+	dataset.insert(len(dataset.columns), 'percentMinionDiff', minionKillDiff / totalMinionKills)
+	dataset.insert(len(dataset.columns), 'percentJungleMinionDiff', jungleMinionKillDiff / totalJungleMinionKills)
+
+	# Rescale gold the same way
+	goldDiff = dataset.blueTotalGold - dataset.redTotalGold
+	totalGold = dataset.blueTotalGold + dataset.redTotalGold
+
+	dataset.insert(len(dataset.columns), 'percentTotalGoldDiff', goldDiff / totalGold)
+
+	# Remove specific dragon kills outside of elder and rescaled features
+	cut_features = ['blueDragonHextechKill',
+                'blueDragonChemtechKill',
+                'blueDragonFireKill',
+                'blueDragonWaterKill',
+                'blueDragonEarthKill',
+                'blueDragonAirKill',
+                'redDragonHextechKill',
+                'redDragonChemtechKill',
+                'redDragonFireKill',
+                'redDragonWaterKill',
+                'redDragonEarthKill',
+                'redDragonAirKill',
+                'blueMinionsKilled',
+                'blueJungleMinionsKilled',
+                'redMinionsKilled',
+                'redJungleMinionsKilled',
+                'blueTotalGold',
+                'redTotalGold',
+               ]
+
+	dataset.drop(columns=cut_features, inplace=True)
+
+
 def get_batch(data, labels, batch_size):
     return tf.data.Dataset.from_tensor_slices((data,labels)).batch(batch_size)
