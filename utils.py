@@ -1,25 +1,143 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import random
+import numpy as np
+
+from sklearn.preprocessing import StandardScaler
+
+RANDOM_SEED = 42
+random.seed(RANDOM_SEED)
+np.random.seed(RANDOM_SEED)
 
 
-def get_inputs():
-	df1 = pd.read_csv('data/full_data_20.csv')
-	df2 = pd.read_csv('data/full_data_40.csv')
-	df3 = pd.read_csv('data/full_data_60.csv')
-	df4 = pd.read_csv('data/full_data_80.csv')
-	df5 = pd.read_csv('data/full_data_100.csv')
+
+def read_input(input_csv):
+
+	input_dataframe = pd.read_csv(input_csv)
 	
-	game_states = [df1, df2, df3, df4, df5]
+	# Drop meaningless columns ('Unnamed: 0', 'matchID')
+	# redundant columns ('redFirstBlood', 'redWin')
+	# and columns with info we wont have access to for a real game ('fullTimeMS', 'timePercent')
+	input_dataframe.drop(columns=['Unnamed: 0', 'matchID', 'redFirstBlood', 'redWin', 'fullTimeMS', 'timePercent'], inplace=True)
+
+	# Convert bools to int
+	input_dataframe['blueFirstBlood'] = input_dataframe['blueFirstBlood'].astype(int)
+	input_dataframe['blueWin'] = input_dataframe['blueWin'].astype(int)
+
+	return input_dataframe
+
+
+
+def feature_transform(dataset):
+
+	transformed_dataset = dataset.copy()
+	
+	# Create feature for tracking dragon souls
+	# Has dragon soul if number of non elder dragon kills = 4
+	blueNonElderDragonKills = dataset.blueDragonKill - dataset.blueDragonElderKill
+	redNonElderDragonKills = dataset.redDragonKill - dataset.redDragonElderKill
+	
+	transformed_dataset.insert(len(transformed_dataset.columns), 'blueHasDragonSoul', blueNonElderDragonKills.map(lambda x: 1 if x == 4 else 0))
+	transformed_dataset.insert(len(transformed_dataset.columns), 'redHasDragonSoul', redNonElderDragonKills.map(lambda x: 1 if x == 4 else 0))
+	
+	# Combine blue and red dragon soul, 1 if blue, -1 if red, 0 if neither
+	for idx, row in dataset.iterrows():
+		if row['redHasDragonSoul'] == 1:
+			row['blueHasDragonSoul'] = -1
+
+	# Change minion kills per side to percent difference compared to total kills
+	min_minions = 1 # Add 1 min minion to totals to avoid divide by 0
+	minionKillDiff = dataset.blueMinionsKilled - dataset.redMinionsKilled
+	totalMinionKills = dataset.blueMinionsKilled + dataset.redMinionsKilled + min_minions
+	jungleMinionKillDiff = dataset.blueJungleMinionsKilled - dataset.redJungleMinionsKilled
+	totalJungleMinionKills = dataset.blueJungleMinionsKilled + dataset.redJungleMinionsKilled + min_minions
+
+	transformed_dataset.insert(len(transformed_dataset.columns), 'percentMinionDiff', minionKillDiff / totalMinionKills)
+	transformed_dataset.insert(len(transformed_dataset.columns), 'percentJungleMinionDiff', jungleMinionKillDiff / totalJungleMinionKills)
+
+	# Rescale gold and player levels the same way
+	goldDiff = dataset.blueTotalGold - dataset.redTotalGold
+	totalGold = dataset.blueTotalGold + dataset.redTotalGold
+
+	avgLevelDiff  = dataset.blueAvgPlayerLevel - dataset.redAvgPlayerLevel
+	percentAvgLevelDiff = avgLevelDiff / (dataset.blueAvgPlayerLevel + dataset.redAvgPlayerLevel)
+
+	transformed_dataset.insert(len(transformed_dataset.columns), 'percentAvgLevelDiff', percentAvgLevelDiff)
+	transformed_dataset.insert(len(transformed_dataset.columns), 'percentTotalGoldDiff', goldDiff / totalGold)
+	
+	# Combine neutral objectives and tower kills to percent differences
+	heraldKillDiff = dataset.blueRiftHeraldKill - dataset.redRiftHeraldKill
+	baronKillDiff = dataset.blueBaronKill - dataset.redBaronKill
+	elderKillDiff = dataset.blueDragonElderKill - dataset.redDragonElderKill
+
+	eps = 0.0001 # Small eps to avoid dividing by 0
+
+	avgDragonKillDiff  = dataset.blueDragonKill - dataset.redDragonKill
+	percentDragonDiff = avgDragonKillDiff / (dataset.blueDragonKill + dataset.redDragonKill + eps)
+
+	avgTowerKillDiff  = dataset.blueTowerKill - dataset.redTowerKill
+	percentTowerDiff = avgTowerKillDiff / (dataset.blueTowerKill + dataset.redTowerKill + eps)
+
+	transformed_dataset.insert(len(transformed_dataset.columns), 'heraldKillDiff', heraldKillDiff)
+	transformed_dataset.insert(len(transformed_dataset.columns), 'baronKillDiff', baronKillDiff)
+	transformed_dataset.insert(len(transformed_dataset.columns), 'elderKillDiff', elderKillDiff)
+	transformed_dataset.insert(len(transformed_dataset.columns), 'percentDragonDiff', percentDragonDiff)
+	transformed_dataset.insert(len(transformed_dataset.columns), 'percentTowerDiff', percentTowerDiff)
+
+	# Remove features that have been combined
+	combined_features = ['redHasDragonSoul'
+						 'blueMinionsKilled',
+					  	 'blueJungleMinionsKilled',
+                		 'redMinionsKilled',
+    					 'redJungleMinionsKilled',
+    					 'blueTotalGold',
+                		 'redTotalGold',
+						 'blueAvgPlayerLevel',
+                		 'redAvgPlayerLevel',
+                		 'redHasDragonSoul',
+                		 'blueRiftHeraldKill',
+                		 'blueBaronKill',
+                		 'blueDragonElderKill',
+                		 'redRiftHeraldKill',
+                		 'redBaronKill',
+                		 'redDragonElderKill',
+						 'blueDragonKill',
+                		 'redDragonKill',
+                		 'blueTowerKill',
+                		 'redTowerKill',
+               			]
+
+	transformed_dataset.drop(columns=combined_features, inplace=True)
+
+	# Remove unimportant features
+	unimportant_features = ['blueDragonHextechKill',
+                		 	'blueDragonChemtechKill',
+                		 	'blueDragonFireKill',
+                			'blueDragonWaterKill',
+                			'blueDragonEarthKill',
+                			'blueDragonAirKill',
+                			'redDragonHextechKill',
+                			'redDragonChemtechKill',
+                			'redDragonFireKill',
+                			'redDragonWaterKill',
+                			'redDragonEarthKill',
+                			'redDragonAirKill',
+							'blueInhibitorKill',
+                        	'redInhibitorKill'
+                       		]
+	
+	transformed_dataset.drop(columns=unimportant_features, inplace=True)
+
+
+def scale_dataset(input_set, training_set):
+	# Rescale blue/red kills to have mean = 0 and stdev = 1
+	# Improves performance for LogisticRegression and SGDClassifier
+	# Rescales input based on training set so that the scaling is consistent
+	scaler = StandardScaler()
+	input_set[['blueChampionKill', 'redChampionKill']] = scaler.fit_transform(training_set[['blueChampionKill', 'redChampionKill']])
 	
 
-    # Drop redundant columns
-	for df in game_states:
-		df.drop(columns=['Unnamed: 0', 'matchID', 'redFirstBlood', 'redWin', 'fullTimeMS', 'timePercent'], inplace=True)
-		df['blueFirstBlood'] = df['blueFirstBlood'].astype(int)
-		df['blueWin'] = df['blueWin'].astype(int)
-		
-	return df1, df2, df3, df4, df5
 
 
 def corr_scatter_plot( dataset, x_column, hue_column, alpha=1):
@@ -35,65 +153,12 @@ def binary_comparison_plot( dataset, target):
 	fig, axs = plt.subplots(n_rows, 1, figsize=(12, 4 * n_rows))
 
 	for i, col in enumerate(cont_cols):
-    		sns.violinplot(x=target, y=col, data=dataset, ax=axs[i], inner="quart", bw_adjust = 1.1)
-    		axs[i].set_title(f'{col.title()} Distribution by Target', fontsize=14)
-    		axs[i].set_xlabel(target, fontsize=12)
-    		axs[i].set_ylabel(col.title(), fontsize=12)
+			sns.violinplot(x=target, y=col, data=dataset, ax=axs[i], inner="quart", bw_adjust = 1.1)
+			axs[i].set_title(f'{col.title()} Distribution by Target', fontsize=14)
+			axs[i].set_xlabel(target, fontsize=12)
+			axs[i].set_ylabel(col.title(), fontsize=12)
 
 	fig.tight_layout()
 
 	plt.show()
 
-
-def feature_transform(dataset):
-	### Place tested feature transforms here for easier processing
-	
-	# Has dragon soul if number of non elder dragon kills = 4
-	blueNonElderDragonKills = dataset.blueDragonKill - dataset.blueDragonElderKill
-	redNonElderDragonKills = dataset.redDragonKill - dataset.redDragonElderKill
-	
-	dataset.insert(len(dataset.columns), 'blueHasDragonSoul', blueNonElderDragonKills.map(lambda x: 1 if x == 4 else 0))
-	dataset.insert(len(dataset.columns), 'redHasDragonSoul', redNonElderDragonKills.map(lambda x: 1 if x == 4 else 0))
-
-	# Change minion kills per side to percent difference compared to total kills
-	min_minions = 1 # Add min minions to totals to avoid divide by 0
-	minionKillDiff = dataset.blueMinionsKilled - dataset.redMinionsKilled
-	totalMinionKills = dataset.blueMinionsKilled + dataset.redMinionsKilled + min_minions
-	jungleMinionKillDiff = dataset.blueJungleMinionsKilled - dataset.redJungleMinionsKilled
-	totalJungleMinionKills = dataset.blueJungleMinionsKilled + dataset.redJungleMinionsKilled + min_minions
-
-	dataset.insert(len(dataset.columns), 'percentMinionDiff', minionKillDiff / totalMinionKills)
-	dataset.insert(len(dataset.columns), 'percentJungleMinionDiff', jungleMinionKillDiff / totalJungleMinionKills)
-
-	# Rescale gold the same way
-	goldDiff = dataset.blueTotalGold - dataset.redTotalGold
-	totalGold = dataset.blueTotalGold + dataset.redTotalGold
-
-	dataset.insert(len(dataset.columns), 'percentTotalGoldDiff', goldDiff / totalGold)
-
-	# Remove specific dragon kills outside of elder and rescaled features
-	cut_features = ['blueDragonHextechKill',
-                'blueDragonChemtechKill',
-                'blueDragonFireKill',
-                'blueDragonWaterKill',
-                'blueDragonEarthKill',
-                'blueDragonAirKill',
-                'redDragonHextechKill',
-                'redDragonChemtechKill',
-                'redDragonFireKill',
-                'redDragonWaterKill',
-                'redDragonEarthKill',
-                'redDragonAirKill',
-                'blueMinionsKilled',
-                'blueJungleMinionsKilled',
-                'redMinionsKilled',
-                'redJungleMinionsKilled',
-                'blueTotalGold',
-                'redTotalGold',
-               ]
-
-	dataset.drop(columns=cut_features, inplace=True)
-
-
-def get_batch(data, labels, batch_size):
-    return tf.data.Dataset.from_tensor_slices((data,labels)).batch(batch_size)
