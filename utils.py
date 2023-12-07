@@ -5,6 +5,8 @@ import random
 import numpy as np
 
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
 
 RANDOM_SEED = 42
 random.seed(RANDOM_SEED)
@@ -12,9 +14,9 @@ np.random.seed(RANDOM_SEED)
 
 
 
-def read_input(input_csv):
+def read_input(*input_csvs):
 
-	input_dataframe = pd.read_csv(input_csv)
+	input_dataframe = pd.concat([pd.read_csv(file) for file in input_csvs])
 	
 	# Drop meaningless columns ('Unnamed: 0', 'matchID')
 	# redundant columns ('redFirstBlood', 'redWin')
@@ -129,14 +131,40 @@ def feature_transform(dataset):
 	
 	transformed_dataset.drop(columns=unimportant_features, inplace=True)
 
+	return transformed_dataset
+
 
 def scale_dataset(input_set, training_set):
 	# Rescale blue/red kills to have mean = 0 and stdev = 1
-	# Improves performance for LogisticRegression and SGDClassifier
 	# Rescales input based on training set so that the scaling is consistent
 	scaler = StandardScaler()
 	input_set[['blueChampionKill', 'redChampionKill']] = scaler.fit_transform(training_set[['blueChampionKill', 'redChampionKill']])
 	
+
+
+def process_input(*input_csvs, training_frac=0.8, random_state=RANDOM_SEED):
+
+	# Read data and apply transformations
+	input_dataframe = read_input(input_csvs)
+	dataset = feature_transform(input_dataframe)
+
+	# Split into training and validation sets
+	valid_frac = 1 - training_frac
+
+	train_set, valid_set = train_test_split(dataset, test_size=valid_frac, random_state=RANDOM_SEED)
+
+	train_labels = train_set.pop('blueWin')
+	valid_labels = valid_set.pop('blueWin')
+
+	# Scale kills to improve LR and SGD performance
+	scaler = StandardScaler()
+
+	for set in [train_set, valid_set]:
+		set[['blueChampionKill', 'redChampionKill']] = scaler.fit_transform(train_set[['blueChampionKill', 'redChampionKill']])
+
+	return train_set, train_labels, valid_set, valid_labels
+
+
 
 
 
