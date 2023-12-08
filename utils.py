@@ -16,7 +16,7 @@ np.random.seed(RANDOM_SEED)
 
 def read_input(*input_csvs):
 
-	input_dataframe = pd.concat([pd.read_csv(file) for file in input_csvs])
+	input_dataframe = pd.concat([pd.read_csv(file[0]) for file in input_csvs])
 	
 	# Drop meaningless columns ('Unnamed: 0', 'matchID')
 	# redundant columns ('redFirstBlood', 'redWin')
@@ -44,7 +44,7 @@ def feature_transform(dataset):
 	transformed_dataset.insert(len(transformed_dataset.columns), 'redHasDragonSoul', redNonElderDragonKills.map(lambda x: 1 if x == 4 else 0))
 	
 	# Combine blue and red dragon soul, 1 if blue, -1 if red, 0 if neither
-	for idx, row in dataset.iterrows():
+	for idx, row in transformed_dataset.iterrows():
 		if row['redHasDragonSoul'] == 1:
 			row['blueHasDragonSoul'] = -1
 
@@ -88,7 +88,7 @@ def feature_transform(dataset):
 	transformed_dataset.insert(len(transformed_dataset.columns), 'percentTowerDiff', percentTowerDiff)
 
 	# Remove features that have been combined
-	combined_features = ['redHasDragonSoul'
+	combined_features = ['redHasDragonSoul',
 						 'blueMinionsKilled',
 					  	 'blueJungleMinionsKilled',
                 		 'redMinionsKilled',
@@ -134,11 +134,11 @@ def feature_transform(dataset):
 	return transformed_dataset
 
 
-def scale_dataset(input_set, training_set):
+def scale_dataset(dataset):
 	# Rescale blue/red kills to have mean = 0 and stdev = 1
-	# Rescales input based on training set so that the scaling is consistent
 	scaler = StandardScaler()
-	input_set[['blueChampionKill', 'redChampionKill']] = scaler.fit_transform(training_set[['blueChampionKill', 'redChampionKill']])
+	dataset[['blueChampionKill', 'redChampionKill']] = scaler.fit_transform(dataset[['blueChampionKill', 'redChampionKill']])
+	return dataset
 	
 
 
@@ -147,6 +147,7 @@ def process_input(*input_csvs, training_frac=0.8, random_state=RANDOM_SEED):
 	# Read data and apply transformations
 	input_dataframe = read_input(input_csvs)
 	dataset = feature_transform(input_dataframe)
+	dataset = scale_dataset(dataset)
 
 	# Split into training and validation sets
 	valid_frac = 1 - training_frac
@@ -156,18 +157,12 @@ def process_input(*input_csvs, training_frac=0.8, random_state=RANDOM_SEED):
 	train_labels = train_set.pop('blueWin')
 	valid_labels = valid_set.pop('blueWin')
 
-	# Scale kills to improve LR and SGD performance
-	scaler = StandardScaler()
-
-	for set in [train_set, valid_set]:
-		set[['blueChampionKill', 'redChampionKill']] = scaler.fit_transform(train_set[['blueChampionKill', 'redChampionKill']])
-
 	return train_set, train_labels, valid_set, valid_labels
 
 
 
 
-
+# Plotting utils
 def corr_scatter_plot( dataset, x_column, hue_column, alpha=1):
     for column in dataset.columns:
         if (column != x_column.name and column != hue_column.name):

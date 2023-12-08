@@ -1,17 +1,12 @@
 import pandas as pd
-import random
-import pandas as pd
 import numpy as np
 import joblib
 
-from sklearn.model_selection import train_test_split, cross_val_score, KFold
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.linear_model import SGDClassifier, LogisticRegression
-from sklearn.preprocessing import StandardScaler
 
 import tensorflow as tf
 import xgboost as xgb
-import optuna
 
 import utils
 
@@ -117,16 +112,17 @@ class Models():
         self.models['sgd'] = joblib.load('output/sgd.joblib')
         self.models['ann'].load_weights('output/ann.ckpt')
 
-        # Prepare ANN input
+        # Prepare ANN and XGB input
         tf_data = tf.convert_to_tensor(test_set, dtype='float32')
         tf_labels = tf.convert_to_tensor(test_labels, dtype='float32')
-
+        dm_input = xgb.DMatrix(test_set, test_labels)
 
         # Get XGB, LR and SGD predictions
-        xgb_pred = xgb_bst.predict(test_set)
+        xgb_pred = [round(pred) for pred in xgb_bst.predict(dm_input)]
         lr_pred = self.models['lr'].predict(test_set)
         sgd_pred = self.models['sgd'].predict(test_set)
         
+        print(xgb_pred[:10])
         # Compute binary accuracy
         xgb_acc = accuracy_score(test_labels, xgb_pred)
         lr_acc = accuracy_score(test_labels, lr_pred)
@@ -154,27 +150,31 @@ class Models():
         self.models['sgd'] = joblib.load('output/sgd.joblib')
         self.models['ann'].load_weights('output/ann.ckpt')
 
-        # Prepare ANN input
+        # Prepare ANN and XGB input
         tf_input = tf.convert_to_tensor(input_df, dtype='float32')
+        dm_input = xgb.DMatrix(input_df)
 
         # Get predictions
-        xgb_pred = xgb_bst.predict_proba(input_df)
+        xgb_pred = xgb_bst.predict(dm_input)
         lr_pred = self.models['lr'].predict_proba(input_df)
         sgd_pred = self.models['sgd'].predict_proba(input_df)
         ann_pred = self.models['ann'].predict(tf_input)
 
+        # Get win probabilities
+        xgb_prob = xgb_pred
+        lr_prob = [pred[1] for pred in lr_pred]
+        sgd_prob = [pred[1] for pred in sgd_pred]
+        ann_prob = [pred[0] for pred in ann_pred]
+        avg_prob = [sum(preds) for preds in zip(xgb_prob, lr_prob, sgd_prob, ann_prob)]
 
-        predictions = {'XGB' : xgb_pred,
-                       'LR' : lr_pred,
-                       'SGD' : sgd_pred,
-                       'ANN' : ann_pred
+        predictions = {'XGB' : xgb_prob,
+                       'LR' : lr_prob,
+                       'SGD' : sgd_prob,
+                       'ANN' : ann_prob,
+                       'Avg' : avg_prob
                       }
-        
-        for i in range(n_preds):
-            aggregate_pred = (ann_pred[i][0] 
-                              + lr_pred[i][1]
-                              + sgd_pred[i][1]
-                              + xgb_pred[i][0]) / 4
-            print('Averaged win probability prediction: {:.3f}'.format(aggregate_pred))
+    
+        df_predictions = pd.DataFrame(data=predictions)
+        #print('Averaged win probability prediction: {:.3f}'.format(aggregate_pred))
 
-        return predictions
+        return df_predictions
