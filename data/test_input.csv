@@ -1,0 +1,10 @@
+,matchID,blueChampionKill,blueFirstBlood,blueDragonKill,blueDragonHextechKill,blueDragonChemtechKill,blueDragonFireKill,blueDragonAirKill,blueDragonEarthKill,blueDragonWaterKill,blueDragonElderKill,blueRiftHeraldKill,blueBaronKill,blueTowerKill,blueInhibitorKill,blueTotalGold,blueMinionsKilled,blueJungleMinionsKilled,blueAvgPlayerLevel,redChampionKill,redFirstBlood,redDragonKill,redDragonHextechKill,redDragonChemtechKill,redDragonFireKill,redDragonAirKill,redDragonEarthKill,redDragonWaterKill,redDragonElderKill,redRiftHeraldKill,redBaronKill,redTowerKill,redInhibitorKill,redTotalGold,redMinionsKilled,redJungleMinionsKilled,redAvgPlayerLevel
+0,BR1_2720891721,37,True,2,1,0,1,0,0,0,0,0,0,8,1,51702,377,112,12.2,36,False,1,0,1,0,0,0,0,0,1,1,2,0,49736,318,116,12.6
+1,BR1_2720337066,19,False,0,0,0,0,0,0,0,0,1,0,2,0,40152,365,96,11.6,29,True,3,1,0,1,0,1,0,0,1,0,4,0,43894,412,135,12.8
+2,BR1_2720218416,18,False,1,0,1,0,0,0,0,0,0,0,5,0,50594,565,124,14.4,25,True,2,0,0,1,1,0,0,0,1,1,4,0,53899,517,167,15
+3,BR1_2720199652,21,True,3,0,1,1,1,0,0,0,2,0,5,0,40617,432,124,11.4,9,False,0,0,0,0,0,0,0,0,0,0,2,0,32466,415,100,11
+4,BR1_2720058177,16,False,1,0,0,0,0,1,0,0,2,0,3,0,39447,409,100,12.2,35,True,2,1,0,1,0,0,0,0,0,0,4,1,48114,430,120,13.2
+5,BR1_2725151476,5,False,0,0,0,0,0,0,0,0,0,0,0,0,17874,200,36,7.4,9,True,0,0,0,0,0,0,0,0,1,0,1,0,22871,260,80,8
+6,BR1_2723996461,44,True,2,0,0,0,0,0,2,0,2,2,8,4,71886,608,144,16.6,32,False,3,0,1,0,0,1,1,0,0,0,2,0,64027,679,152,16.4
+7,BR1_2723969778,21,True,2,0,0,0,1,0,1,0,1,0,5,0,41886,444,132,12,11,False,1,0,0,1,0,0,0,0,1,0,1,0,34861,396,112,11.2
+8,BR1_2723968159,0,False,0,0,0,0,0,0,0,0,0,0,0,0,2500,0,0,1,0,False,0,0,0,0,0,0,0,0,0,0,0,0,2500,0,0,1

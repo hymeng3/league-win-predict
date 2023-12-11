@@ -14,9 +14,9 @@ np.random.seed(RANDOM_SEED)
 
 
 
-def read_input(*input_csvs):
+def read_input(input_csv):
 
-	input_dataframe = pd.concat([pd.read_csv(file[0]) for file in input_csvs])
+	input_dataframe = pd.read_csv(input_csv)
 	
 	# Drop meaningless columns ('Unnamed: 0', 'matchID')
 	# redundant columns ('redFirstBlood', 'redWin')
@@ -29,7 +29,17 @@ def read_input(*input_csvs):
 
 	return input_dataframe
 
+def read_test_input(input_csv):
 
+	input_dataframe = pd.read_csv(input_csv)
+	
+	# Missing some columns compared to training data
+	input_dataframe.drop(columns=['Unnamed: 0', 'matchID', 'redFirstBlood'], inplace=True)
+
+	# Convert bools to int
+	input_dataframe['blueFirstBlood'] = input_dataframe['blueFirstBlood'].astype(int)
+
+	return input_dataframe
 
 def feature_transform(dataset):
 
@@ -87,51 +97,25 @@ def feature_transform(dataset):
 	transformed_dataset.insert(len(transformed_dataset.columns), 'percentDragonDiff', percentDragonDiff)
 	transformed_dataset.insert(len(transformed_dataset.columns), 'percentTowerDiff', percentTowerDiff)
 
-	# Remove features that have been combined
-	combined_features = ['redHasDragonSoul',
-						 'blueMinionsKilled',
-					  	 'blueJungleMinionsKilled',
-                		 'redMinionsKilled',
-    					 'redJungleMinionsKilled',
-    					 'blueTotalGold',
-                		 'redTotalGold',
-						 'blueAvgPlayerLevel',
-                		 'redAvgPlayerLevel',
-                		 'redHasDragonSoul',
-                		 'blueRiftHeraldKill',
-                		 'blueBaronKill',
-                		 'blueDragonElderKill',
-                		 'redRiftHeraldKill',
-                		 'redBaronKill',
-                		 'redDragonElderKill',
-						 'blueDragonKill',
-                		 'redDragonKill',
-                		 'blueTowerKill',
-                		 'redTowerKill',
-               			]
 
-	transformed_dataset.drop(columns=combined_features, inplace=True)
+	# Grab important features for output
+	features = ['blueChampionKill', 
+				'blueFirstBlood', 
+				'redChampionKill', 
+				'blueHasDragonSoul', 
+				'percentMinionDiff', 
+				'percentJungleMinionDiff', 
+				'percentAvgLevelDiff', 
+				'percentTotalGoldDiff', 
+				'heraldKillDiff', 
+				'baronKillDiff', 
+				'elderKillDiff', 
+				'percentDragonDiff', 
+				'percentTowerDiff']
 
-	# Remove unimportant features
-	unimportant_features = ['blueDragonHextechKill',
-                		 	'blueDragonChemtechKill',
-                		 	'blueDragonFireKill',
-                			'blueDragonWaterKill',
-                			'blueDragonEarthKill',
-                			'blueDragonAirKill',
-                			'redDragonHextechKill',
-                			'redDragonChemtechKill',
-                			'redDragonFireKill',
-                			'redDragonWaterKill',
-                			'redDragonEarthKill',
-                			'redDragonAirKill',
-							'blueInhibitorKill',
-                        	'redInhibitorKill'
-                       		]
-	
-	transformed_dataset.drop(columns=unimportant_features, inplace=True)
+	output_dataset = transformed_dataset[features].copy()
 
-	return transformed_dataset
+	return output_dataset
 
 
 def scale_dataset(dataset):

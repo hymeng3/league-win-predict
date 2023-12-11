@@ -1,3 +1,7 @@
+import logging, os
+logging.disable(logging.WARNING)
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
 import pandas as pd
 import numpy as np
 import joblib
@@ -165,7 +169,7 @@ class Models():
         lr_prob = [pred[1] for pred in lr_pred]
         sgd_prob = [pred[1] for pred in sgd_pred]
         ann_prob = [pred[0] for pred in ann_pred]
-        avg_prob = [sum(preds) for preds in zip(xgb_prob, lr_prob, sgd_prob, ann_prob)]
+        avg_prob = [sum(preds)/4 for preds in zip(xgb_prob, lr_prob, sgd_prob, ann_prob)]
 
         predictions = {'XGB' : xgb_prob,
                        'LR' : lr_prob,
