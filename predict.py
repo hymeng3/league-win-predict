@@ -27,9 +27,10 @@ if args.train:
     models.evaluate(valid_set, valid_labels)
 
 else:
-    input_df = utils.read_test_input(input_file)
+    input_df = utils.read_input(input_file)
     data = utils.feature_transform(input_df)
     scaled_data = utils.scale_dataset(data)
+
 
     predictions = models.predict(scaled_data)
 

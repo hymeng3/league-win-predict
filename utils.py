@@ -17,27 +17,11 @@ np.random.seed(RANDOM_SEED)
 def read_input(input_csv):
 
 	input_dataframe = pd.read_csv(input_csv)
-	
-	# Drop meaningless columns ('Unnamed: 0', 'matchID')
-	# redundant columns ('redFirstBlood', 'redWin')
-	# and columns with info we wont have access to for a real game ('fullTimeMS', 'timePercent')
-	input_dataframe.drop(columns=['Unnamed: 0', 'matchID', 'redFirstBlood', 'redWin', 'fullTimeMS', 'timePercent'], inplace=True)
 
 	# Convert bools to int
 	input_dataframe['blueFirstBlood'] = input_dataframe['blueFirstBlood'].astype(int)
-	input_dataframe['blueWin'] = input_dataframe['blueWin'].astype(int)
-
-	return input_dataframe
-
-def read_test_input(input_csv):
-
-	input_dataframe = pd.read_csv(input_csv)
-	
-	# Missing some columns compared to training data
-	input_dataframe.drop(columns=['Unnamed: 0', 'matchID', 'redFirstBlood'], inplace=True)
-
-	# Convert bools to int
-	input_dataframe['blueFirstBlood'] = input_dataframe['blueFirstBlood'].astype(int)
+	if 'blueWin' in input_dataframe:
+		input_dataframe['blueWin'] = input_dataframe['blueWin'].astype(int)
 
 	return input_dataframe
 
@@ -97,7 +81,6 @@ def feature_transform(dataset):
 	transformed_dataset.insert(len(transformed_dataset.columns), 'percentDragonDiff', percentDragonDiff)
 	transformed_dataset.insert(len(transformed_dataset.columns), 'percentTowerDiff', percentTowerDiff)
 
-
 	# Grab important features for output
 	features = ['blueChampionKill', 
 				'blueFirstBlood', 
@@ -112,6 +95,10 @@ def feature_transform(dataset):
 				'elderKillDiff', 
 				'percentDragonDiff', 
 				'percentTowerDiff']
+	
+	# Add label for training if exists
+	if 'blueWin' in dataset:
+		features.append('blueWin')
 
 	output_dataset = transformed_dataset[features].copy()
 
@@ -119,17 +106,17 @@ def feature_transform(dataset):
 
 
 def scale_dataset(dataset):
-	# Rescale blue/red kills to have mean = 0 and stdev = 1
-	scaler = StandardScaler()
-	dataset[['blueChampionKill', 'redChampionKill']] = scaler.fit_transform(dataset[['blueChampionKill', 'redChampionKill']])
+	# Rescale blue/red kills
+	dataset.blueChampionKill = dataset.blueChampionKill.div(20)
+	dataset.redChampionKill = dataset.redChampionKill.div(20)
 	return dataset
 	
 
 
-def process_input(*input_csvs, training_frac=0.8, random_state=RANDOM_SEED):
+def process_input(input_csv, training_frac=0.8, random_state=RANDOM_SEED):
 
 	# Read data and apply transformations
-	input_dataframe = read_input(input_csvs)
+	input_dataframe = read_input(input_csv)
 	dataset = feature_transform(input_dataframe)
 	dataset = scale_dataset(dataset)
 
