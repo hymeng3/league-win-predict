@@ -1,0 +1,58 @@
+\documentclass{article}
+
+
+\usepackage{subfig}
+\usepackage{graphicx}
+\usepackage{epsfig}
+\usepackage{epstopdf}
+\usepackage{amssymb}
+\usepackage[sorting=none]{biblatex}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{braket}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage[acronym]{glossaries}
+\usepackage [english]{babel}
+\usepackage [autostyle, english = american]{csquotes}
+\MakeOuterQuote{"}
+
+
+
+\hypersetup{bookmarksnumbered=true, bookmarksopen=true, bookmarksopenlevel=0}
+\hypersetup{breaklinks}
+\hypersetup{linkcolor=blue,citecolor=blue,filecolor=black,urlcolor=blue}
+\hypersetup{unicode,psdextra}
+
+
+\addbibresource{bib/references.bib}
+
+\graphicspath{ {./figures/} }
+
+
+\author{Huan Yu (Henry) Meng}
+\title{A win-probability predictor for League of Legends matches}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+\input{secData}
+
+\input{secEDA}
+
+\input{secModels}
+
+\input{secResults}
+
+\input{secConc}
+
+\printbibliography[heading=bibintoc,title={References}]
+
+\end{document}
+
