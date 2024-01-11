@@ -23,12 +23,12 @@ class Models():
         self.n_estimators = n_estimators # Number of XGB estimators
         self.max_iter = max_iter # Max iterations for LR and SGD
         self.random_state = random_state # Random state for XGB
-        self.models = self._init_models()
+        self.models = self.init_models()
         self.n_models = len(self.models)
 
 
 
-    def _init_models(self):
+    def init_models(self):
 
         # XGB paramters, hyperparameter values obtained from optuna
         xgb_params = {'objective': 'binary:logistic',
