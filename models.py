@@ -23,6 +23,8 @@ class Models():
         self.n_estimators = n_estimators # Number of XGB estimators
         self.max_iter = max_iter # Max iterations for LR and SGD
         self.random_state = random_state # Random state for XGB
+        self.epochs = 30 # Number of epochs to run for ANN
+        self.learning_rate = 0.001 # Learning rate of ANN optimizer
         self.models = self._init_models()
         self.n_models = len(self.models)
 
@@ -61,7 +63,7 @@ class Models():
                 ])
         
         # Set ANN optimizer and loss function
-        optimizer = tf.keras.optimizers.AdamW(learning_rate=0.001)
+        optimizer = tf.keras.optimizers.AdamW(learning_rate=self.learning_rate)
         loss_func = tf.keras.losses.BinaryCrossentropy()
 
         # Compile ANN
@@ -98,7 +100,7 @@ class Models():
         self.models['sgd'].fit(train_set, train_labels)
         self.models['ann'].fit(x=tf_data, 
                                y=tf_labels, 
-                               epochs=20, 
+                               epochs=self.epochs, 
                                batch_size=64,
                                callbacks=[tf_save_callback])
 
