@@ -13,13 +13,13 @@ from sklearn.linear_model import SGDClassifier, LogisticRegression
 import tensorflow as tf
 import xgboost as xgb
 
-import utils
+import etl
 
 
 
 class Models():
 
-    def __init__(self, n_estimators=100, max_iter=1000, random_state=utils.RANDOM_SEED):
+    def __init__(self, n_estimators=100, max_iter=1000, random_state=etl.RANDOM_SEED):
         self.n_estimators = n_estimators # Number of XGB estimators
         self.max_iter = max_iter # Max iterations for LR and SGD
         self.random_state = random_state # Random state for XGB
@@ -175,6 +175,5 @@ class Models():
                       }
     
         df_predictions = pd.DataFrame(data=predictions)
-        #print('Averaged win probability prediction: {:.3f}'.format(aggregate_pred))
 
         return df_predictions

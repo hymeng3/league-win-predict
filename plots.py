@@ -30,6 +30,7 @@ def get_win_percent(n_bins, input_list):
 
     pred_true = [0 for i in range(n_bins)]
     pred_total = [0 for i in range(n_bins)]
+    
 
     for i in range(len(input_list)):
         idx = math.floor(input_list[i][0] * n_bins)
@@ -40,3 +41,19 @@ def get_win_percent(n_bins, input_list):
     bin_content = [pred_true[i] / pred_total[i] for i in range(n_bins)]
 
     return bin_content
+
+def get_bin_centers(n_bins, input_list):
+      
+    expected = [0 for i in range(n_bins)]
+    pred_total = [0 for i in range(n_bins)]
+
+    for i in range(len(input_list)):
+        idx = math.floor(input_list[i][0] * n_bins)
+        expected[idx] += input_list[i][0]
+        pred_total[idx] += 1
+
+    expected = [expected[i] / pred_total[i] for i in range(n_bins)]
+
+    return expected
+
+    
