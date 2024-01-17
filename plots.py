@@ -3,7 +3,10 @@ import seaborn as sns
 import math
 
 
-# Plotting utils
+"""
+Various plotting functions used in EDA and analysis of model performance
+"""
+
 def corr_scatter_plot( dataset, x_column, hue_column, alpha=1):
     for column in dataset.columns:
         if (column != x_column.name and column != hue_column.name):
@@ -33,7 +36,7 @@ def get_win_percent(n_bins, input_list):
     
 
     for i in range(len(input_list)):
-        idx = math.floor(input_list[i][0] * n_bins)
+        idx = min(math.floor(input_list[i][0] * n_bins), n_bins - 1)
         pred_total[idx] += 1
         if input_list[i][1] == 1:
             pred_true[idx] += 1
@@ -48,7 +51,7 @@ def get_bin_centers(n_bins, input_list):
     pred_total = [0 for i in range(n_bins)]
 
     for i in range(len(input_list)):
-        idx = math.floor(input_list[i][0] * n_bins)
+        idx = min(math.floor(input_list[i][0] * n_bins), n_bins - 1)
         expected[idx] += input_list[i][0]
         pred_total[idx] += 1
 
@@ -56,4 +59,27 @@ def get_bin_centers(n_bins, input_list):
 
     return expected
 
-    
+def get_residuals(n_bins, input_list):
+
+    expected = [0 for i in range(n_bins)]
+    pred_total = [0 for i in range(n_bins)]
+    std = [0 for i in range(n_bins)]
+    residuals = [0 for i in range(n_bins)]
+
+    for i in range(len(input_list)):
+        idx = min(math.floor(input_list[i][0] * n_bins), n_bins - 1)
+        expected[idx] += input_list[i][0]
+        pred_total[idx] += 1
+
+    expected = [expected[i] / pred_total[i] for i in range(n_bins)]
+
+    for i in range(len(input_list)):
+        idx = min(math.floor(input_list[i][0] * n_bins), n_bins - 1)
+        std[idx] += (input_list[i][0] - expected[idx]) ** 2
+
+    std = [math.sqrt(std[i]/pred_total[i]) for i in range(n_bins)]
+
+    observed = get_win_percent(n_bins, input_list)
+    residuals = [(observed[i] - expected[i]) / std[i] for i in range(n_bins)]
+
+    return residuals
