@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
-
+import pandas as pd
 
 """
 Various plotting functions used in EDA and analysis of model performance
@@ -83,3 +83,30 @@ def get_residuals(n_bins, input_list):
     residuals = [(observed[i] - expected[i]) / std[i] for i in range(n_bins)]
 
     return residuals
+
+def make_plotting_df(n_bins, predictions_df, label_str):
+     
+    columns = list(predictions_df.columns)
+    columns.remove(label_str)
+
+    bin_width = 1 / n_bins
+    x_vals = [i*bin_width for i in range(n_bins)]
+
+    plot_dict = {'x': x_vals}
+
+    for column in columns:
+        input = predictions_df[[column, label_str]].values.tolist()
+        observed = get_win_percent(n_bins, input)
+        expected = get_bin_centers(n_bins, input)
+        residuals = get_residuals(n_bins, input)
+
+        plot_dict[column+'_obs'] = observed
+        plot_dict[column+'_exp'] = expected
+        plot_dict[column+'_res'] = residuals
+
+    df = pd.DataFrame(data=plot_dict)
+
+    return df
+
+
+
